@@ -7,6 +7,20 @@ const PRIMARY = [37, 99, 235]   // blue-600
 const GRAY = [107, 114, 128]    // gray-500
 const LIGHT = [249, 250, 251]   // gray-50
 
+/**
+ * Format materi lengkap: judul + deskripsi + file (jika ada)
+ * Contoh output: "Matematika\n  Deskripsi: ...\n  File: soal.pdf"
+ */
+function formatMaterials(materials = []) {
+  if (!materials.length) return '-'
+  return materials.map(m => {
+    let text = m.title
+    if (m.description) text += `\n  ${m.description}`
+    if (m.file_name) text += `\n  File: ${m.file_name}`
+    return text
+  }).join('\n\n')
+}
+
 function addHeader(doc, title, subtitle = '') {
   // Header bar
   doc.setFillColor(...PRIMARY)
@@ -108,7 +122,7 @@ export function exportReportPDF({ sessions, dateFrom, dateTo, filterLabel }) {
       formatDateShort(s.session_date),
       formatTimeRange(s.start_time, s.end_time),
       SESSION_STATUS_LABELS[s.status] || s.status,
-      (s.learning_materials || []).map(m => m.title).join('\n') || '-',
+      formatMaterials(s.learning_materials),
       s.notes || '-',
     ]),
     styles: { fontSize: 8, cellPadding: 3 },
@@ -183,7 +197,7 @@ export function exportStudentPDF(student, sessions, progressList, selected = {})
         formatDateShort(s.session_date),
         formatTimeRange(s.start_time, s.end_time),
         SESSION_STATUS_LABELS[s.status] || s.status,
-        (s.learning_materials || []).map(m => m.title).join('\n') || '-',
+        formatMaterials(s.learning_materials),
         s.notes || '-',
       ]),
       styles: { fontSize: 8, cellPadding: 3 },

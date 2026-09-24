@@ -27,16 +27,34 @@ export function exportStudentExcel(student, sessions, progressList, selected = {
 
   // Sheet: Absensi
   if (selected.attendance !== false && sessions.length > 0) {
-    const headers = ['Tanggal', 'Jam', 'Status', 'Materi Dipelajari', 'Catatan']
-    const rows = sessions.map(s => [
-      formatDateShort(s.session_date),
-      formatTimeRange(s.start_time, s.end_time),
-      SESSION_STATUS_LABELS[s.status] || s.status,
-      (s.learning_materials || []).map(m => m.title).join(', ') || '-',
-      s.notes || '',
-    ])
+    const headers = ['Tanggal', 'Jam', 'Status', 'Materi Dipelajari', 'Deskripsi Materi', 'File Materi', 'Catatan']
+    const rows = sessions.flatMap(s => {
+      const materials = s.learning_materials || []
+      if (materials.length === 0) {
+        return [[
+          formatDateShort(s.session_date),
+          formatTimeRange(s.start_time, s.end_time),
+          SESSION_STATUS_LABELS[s.status] || s.status,
+          '-', '-', '-',
+          s.notes || '',
+        ]]
+      }
+      // Satu baris per materi, info tanggal/jam/status hanya di baris pertama
+      return materials.map((m, i) => [
+        i === 0 ? formatDateShort(s.session_date) : '',
+        i === 0 ? formatTimeRange(s.start_time, s.end_time) : '',
+        i === 0 ? (SESSION_STATUS_LABELS[s.status] || s.status) : '',
+        m.title,
+        m.description || '-',
+        m.file_name || '-',
+        i === 0 ? (s.notes || '') : '',
+      ])
+    })
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-    ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 40 }, { wch: 40 }]
+    ws['!cols'] = [
+      { wch: 15 }, { wch: 15 }, { wch: 12 },
+      { wch: 25 }, { wch: 40 }, { wch: 25 }, { wch: 35 },
+    ]
     XLSX.utils.book_append_sheet(wb, ws, 'Absensi')
   }
 
@@ -86,18 +104,34 @@ export function exportStudentExcel(student, sessions, progressList, selected = {
 export function exportReportExcel({ sessions, dateFrom, dateTo, filterLabel }) {
   const wb = XLSX.utils.book_new()
 
-  const headers = ['Murid', 'Kelas', 'Tanggal', 'Jam', 'Status', 'Materi', 'Catatan']
-  const rows = sessions.map(s => [
-    s.students?.name || '-',
-    s.students?.class || '-',
-    formatDateShort(s.session_date),
-    formatTimeRange(s.start_time, s.end_time),
-    SESSION_STATUS_LABELS[s.status] || s.status,
-    (s.learning_materials || []).map(m => m.title).join(', ') || '-',
-    s.notes || '-',
-  ])
+  const headers = ['Murid', 'Kelas', 'Tanggal', 'Jam', 'Status', 'Materi', 'Deskripsi Materi', 'File Materi', 'Catatan']
 
-  // Title rows
+  const rows = sessions.flatMap(s => {
+    const materials = s.learning_materials || []
+    if (materials.length === 0) {
+      return [[
+        s.students?.name || '-',
+        s.students?.class || '-',
+        formatDateShort(s.session_date),
+        formatTimeRange(s.start_time, s.end_time),
+        SESSION_STATUS_LABELS[s.status] || s.status,
+        '-', '-', '-',
+        s.notes || '-',
+      ]]
+    }
+    return materials.map((m, i) => [
+      i === 0 ? (s.students?.name || '-') : '',
+      i === 0 ? (s.students?.class || '-') : '',
+      i === 0 ? formatDateShort(s.session_date) : '',
+      i === 0 ? formatTimeRange(s.start_time, s.end_time) : '',
+      i === 0 ? (SESSION_STATUS_LABELS[s.status] || s.status) : '',
+      m.title,
+      m.description || '-',
+      m.file_name || '-',
+      i === 0 ? (s.notes || '-') : '',
+    ])
+  })
+
   const titleRows = [
     ['LAPORAN ABSENSI BIMBINGAN BELAJAR'],
     [`Murid: ${filterLabel}`],
@@ -111,9 +145,9 @@ export function exportReportExcel({ sessions, dateFrom, dateTo, filterLabel }) {
   const ws = XLSX.utils.aoa_to_sheet(titleRows)
   ws['!cols'] = [
     { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-    { wch: 12 }, { wch: 35 }, { wch: 40 },
+    { wch: 12 }, { wch: 25 }, { wch: 35 }, { wch: 25 }, { wch: 35 },
   ]
-  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }]
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }]
   XLSX.utils.book_append_sheet(wb, ws, 'Laporan Absensi')
 
   XLSX.writeFile(wb, `Laporan_Absensi_${dateFrom}_${dateTo}.xlsx`)

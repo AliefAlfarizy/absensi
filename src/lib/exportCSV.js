@@ -43,16 +43,32 @@ export function exportReportCSV({ sessions, dateFrom, dateTo, filterLabel }) {
     [`Periode: ${formatDateShort(dateFrom)} – ${formatDateShort(dateTo)}`],
     [`Total Sesi: ${sessions.length}`],
     [],
-    ['Murid', 'Kelas', 'Tanggal', 'Jam', 'Status', 'Materi', 'Catatan'],
-    ...sessions.map(s => [
-      s.students?.name || '-',
-      s.students?.class || '-',
-      formatDateShort(s.session_date),
-      formatTimeRange(s.start_time, s.end_time),
-      SESSION_STATUS_LABELS[s.status] || s.status,
-      (s.learning_materials || []).map(m => m.title).join('; ') || '-',
-      s.notes || '-',
-    ]),
+    ['Murid', 'Kelas', 'Tanggal', 'Jam', 'Status', 'Materi', 'Deskripsi Materi', 'File Materi', 'Catatan'],
+    ...sessions.flatMap(s => {
+      const materials = s.learning_materials || []
+      if (materials.length === 0) {
+        return [[
+          s.students?.name || '-',
+          s.students?.class || '-',
+          formatDateShort(s.session_date),
+          formatTimeRange(s.start_time, s.end_time),
+          SESSION_STATUS_LABELS[s.status] || s.status,
+          '-', '-', '-',
+          s.notes || '-',
+        ]]
+      }
+      return materials.map((m, i) => [
+        i === 0 ? (s.students?.name || '-') : '',
+        i === 0 ? (s.students?.class || '-') : '',
+        i === 0 ? formatDateShort(s.session_date) : '',
+        i === 0 ? formatTimeRange(s.start_time, s.end_time) : '',
+        i === 0 ? (SESSION_STATUS_LABELS[s.status] || s.status) : '',
+        m.title,
+        m.description || '-',
+        m.file_name || '-',
+        i === 0 ? (s.notes || '-') : '',
+      ])
+    }),
   ]
 
   downloadCSV(arrayToCSV(rows), `Laporan_Absensi_${dateFrom}_${dateTo}.csv`)
@@ -76,15 +92,30 @@ export function exportStudentCSV(student, sessions, progressList, selected = {})
 
   if (selected.attendance !== false && sessions.length > 0) {
     rows.push(['=== RIWAYAT ABSENSI ==='])
-    rows.push(['Tanggal', 'Jam', 'Status', 'Materi Dipelajari', 'Catatan'])
+    rows.push(['Tanggal', 'Jam', 'Status', 'Materi', 'Deskripsi Materi', 'File Materi', 'Catatan'])
     sessions.forEach(s => {
-      rows.push([
-        formatDateShort(s.session_date),
-        formatTimeRange(s.start_time, s.end_time),
-        SESSION_STATUS_LABELS[s.status] || s.status,
-        (s.learning_materials || []).map(m => m.title).join('; ') || '-',
-        s.notes || '',
-      ])
+      const materials = s.learning_materials || []
+      if (materials.length === 0) {
+        rows.push([
+          formatDateShort(s.session_date),
+          formatTimeRange(s.start_time, s.end_time),
+          SESSION_STATUS_LABELS[s.status] || s.status,
+          '-', '-', '-',
+          s.notes || '',
+        ])
+      } else {
+        materials.forEach((m, i) => {
+          rows.push([
+            i === 0 ? formatDateShort(s.session_date) : '',
+            i === 0 ? formatTimeRange(s.start_time, s.end_time) : '',
+            i === 0 ? (SESSION_STATUS_LABELS[s.status] || s.status) : '',
+            m.title,
+            m.description || '-',
+            m.file_name || '-',
+            i === 0 ? (s.notes || '') : '',
+          ])
+        })
+      }
     })
     rows.push([])
   }
