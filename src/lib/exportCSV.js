@@ -76,12 +76,13 @@ export function exportStudentCSV(student, sessions, progressList, selected = {})
 
   if (selected.attendance !== false && sessions.length > 0) {
     rows.push(['=== RIWAYAT ABSENSI ==='])
-    rows.push(['Tanggal', 'Jam', 'Status', 'Catatan'])
+    rows.push(['Tanggal', 'Jam', 'Status', 'Materi Dipelajari', 'Catatan'])
     sessions.forEach(s => {
       rows.push([
         formatDateShort(s.session_date),
         formatTimeRange(s.start_time, s.end_time),
         SESSION_STATUS_LABELS[s.status] || s.status,
+        (s.learning_materials || []).map(m => m.title).join('; ') || '-',
         s.notes || '',
       ])
     })

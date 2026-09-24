@@ -101,25 +101,27 @@ export function exportReportPDF({ sessions, dateFrom, dateTo, filterLabel }) {
   // Table
   autoTable(doc, {
     startY: y,
-    head: [['Murid', 'Kelas', 'Tanggal', 'Jam', 'Status', 'Catatan']],
+    head: [['Murid', 'Kelas', 'Tanggal', 'Jam', 'Status', 'Materi Dipelajari', 'Catatan']],
     body: sessions.map(s => [
       s.students?.name || '-',
       s.students?.class || '-',
       formatDateShort(s.session_date),
       formatTimeRange(s.start_time, s.end_time),
       SESSION_STATUS_LABELS[s.status] || s.status,
+      (s.learning_materials || []).map(m => m.title).join('\n') || '-',
       s.notes || '-',
     ]),
     styles: { fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: LIGHT },
     columnStyles: {
-      0: { cellWidth: 38 },
-      1: { cellWidth: 28 },
-      2: { cellWidth: 25 },
-      3: { cellWidth: 22 },
-      4: { cellWidth: 22 },
-      5: { cellWidth: 'auto' },
+      0: { cellWidth: 32 },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 18 },
+      5: { cellWidth: 42 },
+      6: { cellWidth: 'auto' },
     },
   })
 
@@ -176,16 +178,24 @@ export function exportStudentPDF(student, sessions, progressList, selected = {})
     y = addSectionTitle(doc, 'RIWAYAT ABSENSI', y)
     autoTable(doc, {
       startY: y,
-      head: [['Tanggal', 'Waktu', 'Status', 'Catatan']],
+      head: [['Tanggal', 'Waktu', 'Status', 'Materi Dipelajari', 'Catatan']],
       body: sessions.map(s => [
         formatDateShort(s.session_date),
         formatTimeRange(s.start_time, s.end_time),
         SESSION_STATUS_LABELS[s.status] || s.status,
+        (s.learning_materials || []).map(m => m.title).join('\n') || '-',
         s.notes || '-',
       ]),
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: { fillColor: PRIMARY, textColor: 255 },
       alternateRowStyles: { fillColor: LIGHT },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 18 },
+        3: { cellWidth: 65 },
+        4: { cellWidth: 'auto' },
+      },
     })
     y = doc.lastAutoTable.finalY + 8
   }

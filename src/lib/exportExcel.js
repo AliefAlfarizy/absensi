@@ -27,15 +27,16 @@ export function exportStudentExcel(student, sessions, progressList, selected = {
 
   // Sheet: Absensi
   if (selected.attendance !== false && sessions.length > 0) {
-    const headers = ['Tanggal', 'Jam', 'Status', 'Catatan']
+    const headers = ['Tanggal', 'Jam', 'Status', 'Materi Dipelajari', 'Catatan']
     const rows = sessions.map(s => [
       formatDateShort(s.session_date),
       formatTimeRange(s.start_time, s.end_time),
       SESSION_STATUS_LABELS[s.status] || s.status,
+      (s.learning_materials || []).map(m => m.title).join(', ') || '-',
       s.notes || '',
     ])
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-    ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 40 }]
+    ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 40 }, { wch: 40 }]
     XLSX.utils.book_append_sheet(wb, ws, 'Absensi')
   }
 
